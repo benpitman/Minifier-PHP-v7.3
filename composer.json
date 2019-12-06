@@ -1,0 +1,14 @@
+{
+    "name": "bens-minifier",
+    "description": "Code minifier",
+    "authors": [
+        {
+            "name": "Ben Pitman"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "App\\": "app"
+        }
+    }
+}
