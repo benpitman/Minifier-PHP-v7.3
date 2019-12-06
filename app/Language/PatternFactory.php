@@ -8,6 +8,7 @@
 
     final class PatternFactory
     {
+        //TODO return this to a getter so the language pattern factory can be saved
         public static function __callStatic (string $method, array $args)
         {
             $getter = Variable::getlanguage() . "Factory";

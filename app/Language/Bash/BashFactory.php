@@ -5,6 +5,8 @@
     use App\Template\ALanguageFactory;
 
     use App\Language\Bash\Pattern\{
+        CaseItem,
+        CaseOpen,
         ParenthesisClose,
         ParenthesisOpen
     };
@@ -18,20 +20,39 @@
                     array_merge(
                         parent::getPatternList(),
                         [
-
+                            "CaseItem",
+                            "CaseOpen",
+                            "ParenthesisClose",
+                            "ParenthesisOpen"
                         ]
                     )
                 )
             );
         }
 
-        protected static function getParenthesisClose (): ARegex
+        protected static function getCaseItem (): string
         {
-            return new ParenthesisClose();
+            return CaseItem::class;
         }
 
-        protected static function getParenthesisOpen (): ARegex
+        protected static function getCaseOpen (): string
         {
-            return new ParenthesisOpen();
+            return CaseOpen::class;
+        }
+
+        /**
+         * Single parentheses in Bash are primarily used for subshells.
+         * Minifying subshells is a bit above what I'm willing to do,
+         * so I've overridden these to accommodate arithmetic syntax.
+         */
+
+        protected static function getParenthesisClose (): string
+        {
+            return ParenthesisClose::class;
+        }
+
+        protected static function getParenthesisOpen (): string
+        {
+            return ParenthesisOpen::class;
         }
     }
