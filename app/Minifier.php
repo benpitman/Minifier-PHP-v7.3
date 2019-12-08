@@ -9,17 +9,13 @@
     final class Minifier
     {
         private $fileContent;
+        private $patternFactory;
         private $settings;
 
         public function __construct (string $language)
         {
-            Variable::setLanguage($language);
-            try {
-                PatternFactory::BraceClose();
-            }
-            catch (\Error $err) {
-                var_dump($err->getMessage());die;
-            }
+            Variable::setLanguage($settings->getLanguage());
+            $this->patternFactory = LanguageFactory::getPatternFactory();
         }
 
         public function setFilepath (string $filepath): void

@@ -6,6 +6,7 @@
 
     final class Oneliner extends ARegex
     {
+        protected static $description = "Removes any whitespace succeeding ';'";
         protected static $pattern = '/(?<!\;)\;\s+/';
-        protected static $replace = PHP_EOL;
+        protected static $replace = ';';
     }

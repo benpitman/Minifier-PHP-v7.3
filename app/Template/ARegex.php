@@ -4,8 +4,14 @@
 
     abstract class ARegex
     {
+        protected static $description = "";
         protected static $pattern;
         protected static $replace = "";
+
+        public static function getDescription (): string
+        {
+            return static::$description;
+        }
 
         public static function getPattern (): string
         {

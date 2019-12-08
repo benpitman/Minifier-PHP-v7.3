@@ -8,8 +8,9 @@
     {
         private $patternCollection;
 
-        public function __construct ()
+        public function __construct (?string $language = "Any")
         {
+            $this->language = $language;
             $this->pattternCollection = new PatternCollection();
         }
 

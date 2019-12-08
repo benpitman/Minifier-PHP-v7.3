@@ -2,9 +2,7 @@
 
     namespace App\Template;
 
-    interface ILanguageFactory
+    interface IPatternFactory
     {
         public static function get (string $className): string;
-
-        public static function getPatternList (): array;
     }

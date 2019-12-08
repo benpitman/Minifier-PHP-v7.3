@@ -4,9 +4,9 @@
 
     use App\Entity\Variable;
 
-    use App\Template\ILanguageFactory;
+    use App\Template\IPatternFactory;
 
-    class AnyLanguageFactory implements ILanguageFactory
+    class AnyPatternFactory implements IPatternFactory
     {
         private static $ns = __NAMESPACE__ . "\Pattern\\";
 
@@ -16,7 +16,7 @@
 
             if (!class_exists($class))
             {
-                throw new \Error("Pattern '$className' is not available for " . Variable::getLanguage());
+                throw new \Error("Pattern '$className' is not available for language '" . Variable::getLanguage() . "'");
             }
 
             return $class;

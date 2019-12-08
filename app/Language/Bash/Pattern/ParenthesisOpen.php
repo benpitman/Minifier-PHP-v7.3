@@ -11,6 +11,7 @@
      */
     final class ParenthesisOpen extends ARegex
     {
-        protected static $pattern = '/(\$)?\(\(\s+/';
-        protected static $replace = '$1(('
+        protected static $description = "Removes any whitespace succeeding '(('";
+        protected static $pattern = '/\(\(\s+/';
+        protected static $replace = '(('
     }
