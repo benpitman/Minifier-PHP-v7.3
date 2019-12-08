@@ -1,10 +1,25 @@
 #!/usr/bin/env bash
 
+die ()
+{
+    (( $errors )) && printf '\e[31;1mError:\e[0m %s\n' "$@"
+}
+
+warn ()
+{
+    (( $warnings )) && printf '\e[33;1mWarning:\e[0m %s\n' "$@"
+}
+
+inform ()
+{
+    (( $informs )) && printf '\e[34;1mInfo:\e[0m %s\n' "$@"
+}
+
 showHelp ()
 {
     cat << ____HELP
 
-    Usage: minify -i FILE [-a] [-h] [-l LANG] [-o FILE] [(-p PATTERN | -n PATTERN)]
+    Usage: minify -i FILE [-a] [-h] [-i FILE] [-l LANG] [-n PATTERN] [-o FILE] [-p PATTERN] [-q[q]]
 
         -a      Gets all available patterns.
                 If -l provided, will return patterns for given language LANG.
@@ -24,10 +39,17 @@ showHelp ()
 
         -o FILE
                 The output file to save the minified version to.
+                If no file is provided, it will output to the terminal.
 
         -p PATTERN [-p PATTERN] ...
-                Tells the minifier to run these patterns
+                Tells the minifier to run these patterns.
                 If none provided, all patterns will be run for given language LANG.
+
+        -q      Disables output of informs.
+
+        -qq     Disabled output of warnings.
+
+        -qqq    Disables output of errors.
 
     NOTES:
         Any errors, please report them to me at my GitHub page at /benpitman.
@@ -39,9 +61,25 @@ ____HELP
     exit 0
 }
 
-getPatternList=0;
+language=
+getPatternList=0
+informs=1
+warnings=1
+errors=1
 
-while getopts ":a :h :i: :l: :n: :o: :p:" arg; do
+for arg in "$@"; do
+    if [[ "$arg" == -qqq ]]; then
+        errors=0
+    fi
+    if [[ "$arg" =~ -qqq? ]]; then
+        warnings=0
+    fi
+    if [[ "$arg" =~ -qq? ]]; then
+        informs=0
+    fi
+done
+
+while getopts ":a :h :i: :l: :n: :o: :p: :q" arg; do
     case $arg in
         (a) {
             getPatternList=1
@@ -50,10 +88,12 @@ while getopts ":a :h :i: :l: :n: :o: :p:" arg; do
             showHelp
         };;
         (i) {
-            if [[ ! -s "$OPTARG" ]]; then
+            if [[ ! -e "$OPTARG" ]]; then
                 die "$OPTARG is not a file"
             elif [[ ! -r "$OPTARG" ]]; then
                 die "$OPTARG is not readable"
+            elif [[ ! -s "$OPTARG" ]]; then
+                die "$OPTARG is empty"
             fi
 
             inputFile="$OPTARG"
@@ -66,7 +106,15 @@ while getopts ":a :h :i: :l: :n: :o: :p:" arg; do
         };;
         (o) {
             if [[ ! -e "$OPTARG" ]]; then
-                die "$OPTARG is not a file"
+                warn "$OPTARG is not a file. Attempting to create."
+
+                createErrors=$( touch "$OPTARG" 2>&1 )
+
+                if [[ -n "$createErrors" ]]; then
+                    die "$createErrors"
+                fi
+
+                inform "File '$OPTARG' created"
             elif [[ ! -w "$OPTARG" ]]; then
                 die "$OPTARG is not writeable"
             fi
@@ -85,3 +133,10 @@ while getopts ":a :h :i: :l: :n: :o: :p:" arg; do
     esac
 done
 shift $((OPTIND -1))
+
+if [[ -z "$language" ]]; then
+    warn "No language provided. Defaulting to Any"
+fi
+if (( ${#patterns[0]} == 0 )); then
+    warn "No patterns provided. Defaulting to all."
+fi
