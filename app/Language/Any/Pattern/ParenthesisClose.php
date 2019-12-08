@@ -1,6 +1,6 @@
 <?php
 
-    namespace App\Pattern;
+    namespace App\Language\Any\Pattern;
 
     use App\Template\ARegex;
 

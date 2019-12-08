@@ -2,17 +2,26 @@
 
     namespace App\Language\Bash;
 
-    use App\Template\ALanguageFactory;
+    use App\Language\Any\AnyLanguageFactory;
 
-    use App\Language\Bash\Pattern\{
-        CaseItem,
-        CaseOpen,
-        ParenthesisClose,
-        ParenthesisOpen
-    };
+    use App\Template\ILanguageFactory;
 
-    final class BashFactory extends ALanguageFactory
+    final class BashFactory extends AnyLanguageFactory implements ILanguageFactory
     {
+        private static $ns = __NAMESPACE__ . "\Pattern\\";
+
+        public static function get (string $className): string
+        {
+            $class = self::$ns . $className;
+
+            if (!class_exists($class))
+            {
+                return parent::get($className);
+            }
+
+            return $class;
+        }
+
         public static function getPatternList (): array
         {
             return sort(
@@ -22,37 +31,14 @@
                         [
                             "CaseItem",
                             "CaseOpen",
+                            "Heredoc",
+                            "MultilineArgument",
+                            "Oneliner",
                             "ParenthesisClose",
                             "ParenthesisOpen"
                         ]
                     )
                 )
             );
-        }
-
-        protected static function getCaseItem (): string
-        {
-            return CaseItem::class;
-        }
-
-        protected static function getCaseOpen (): string
-        {
-            return CaseOpen::class;
-        }
-
-        /**
-         * Single parentheses in Bash are primarily used for subshells.
-         * Minifying subshells is a bit above what I'm willing to do,
-         * so I've overridden these to accommodate arithmetic syntax.
-         */
-
-        protected static function getParenthesisClose (): string
-        {
-            return ParenthesisClose::class;
-        }
-
-        protected static function getParenthesisOpen (): string
-        {
-            return ParenthesisOpen::class;
         }
     }
