@@ -2,27 +2,31 @@
 
 die ()
 {
-    (( $errors )) && printf '\e[31;1mError:\e[0m %s\n' "$@"
+    (( $_errors )) && printf '\e[31;1mError:\e[0m %s\n' "$@" 1>&2
+    exit 1;
 }
 
 warn ()
 {
-    (( $warnings )) && printf '\e[33;1mWarning:\e[0m %s\n' "$@"
+    (( $_warnings )) && printf '\e[33;1mWarning:\e[0m %s\n' "$@" 1>&2
 }
 
 inform ()
 {
-    (( $informs )) && printf '\e[34;1mInfo:\e[0m %s\n' "$@"
+    (( $_informs )) && printf '\e[34;1mInfo:\e[0m %s\n' "$@" 1>&2
 }
 
 showHelp ()
 {
     cat << ____HELP
 
-    Usage: minify -i FILE [-a] [-h] [-i FILE] [-l LANG] [-n PATTERN] [-o FILE] [-p PATTERN] [-q[q]]
+    Usage: minify [-a [-d]] [-h] [-i FILE] [-l LANG] [-n PATTERN] [-o FILE] [-p PATTERN] [-q[q[q]]] [-r]
 
-        -a      Gets all available patterns.
-                If -l provided, will return patterns for given language LANG.
+        -a      Runs minification with all available patterns.
+                If -l provided, it will run patterns for given language LANG.
+                If -d provided, it will just print the patterns and exit.
+
+        -d      Disables the minification. Used in conjunction with -a.
 
         -h      Displays this help text and exits.
 
@@ -43,13 +47,14 @@ showHelp ()
 
         -p PATTERN [-p PATTERN] ...
                 Tells the minifier to run these patterns.
-                If none provided, all patterns will be run for given language LANG.
 
         -q      Disables output of informs.
 
         -qq     Disabled output of warnings.
 
         -qqq    Disables output of errors.
+
+        -r      Replaces the input FILE with the minified version. (Test first.)
 
     NOTES:
         Any errors, please report them to me at my GitHub page at /benpitman.
@@ -61,28 +66,36 @@ ____HELP
     exit 0
 }
 
-language=
-getPatternList=0
-informs=1
-warnings=1
-errors=1
+(( ${#@} )) || showHelp
+
+declare -g -- _language=
+declare -g -- _getPatternList=0
+declare -g -- _informs=1
+declare -g -- _warnings=1
+declare -g -- _errors=1
+declare -g -- _inputFile=
+declare -g -- _outputFile=
+declare -g -- _minify=1
+declare -ag -- _patterns=()
+declare -ag -- _notPatterns=()
 
 for arg in "$@"; do
     if [[ "$arg" == -qqq ]]; then
-        errors=0
+        _errors=0
     fi
     if [[ "$arg" =~ -qqq? ]]; then
-        warnings=0
+        _warnings=0
     fi
     if [[ "$arg" =~ -qq? ]]; then
-        informs=0
+        _informs=0
     fi
 done
 
-while getopts ":a :h :i: :l: :n: :o: :p: :q" arg; do
+while getopts ":a :h :i: :l: :n: :o: :p: :q :!" arg; do
     case $arg in
         (a) {
-            getPatternList=1
+            _getPatternList=1
+            _minify=0
         };;
         (h) {
             showHelp
@@ -96,15 +109,17 @@ while getopts ":a :h :i: :l: :n: :o: :p: :q" arg; do
                 die "$OPTARG is empty"
             fi
 
-            inputFile="$OPTARG"
+            _inputFile="$OPTARG"
         };;
         (l) {
-            language="$OPTARG"
+            _language="$OPTARG"
         };;
         (n) {
-            notPatterns+=("$OPTARG")
+            _notPatterns+=("$OPTARG")
         };;
         (o) {
+            [[ "$OPTARG" == "-" ]] && continue
+
             if [[ ! -e "$OPTARG" ]]; then
                 warn "$OPTARG is not a file. Attempting to create."
 
@@ -115,14 +130,17 @@ while getopts ":a :h :i: :l: :n: :o: :p: :q" arg; do
                 fi
 
                 inform "File '$OPTARG' created"
-            elif [[ ! -w "$OPTARG" ]]; then
+            fi
+
+
+            if [[ ! -w "$OPTARG" ]]; then
                 die "$OPTARG is not writeable"
             fi
 
-            outputFile="$OPTARG"
+            _outputFile="$OPTARG"
         };;
         (p) {
-            patterns+=("$OPTARG")
+            _patterns+=("$OPTARG")
         };;
         (\?) {
             die "Invalid option -$OPTARG"
@@ -132,11 +150,24 @@ while getopts ":a :h :i: :l: :n: :o: :p: :q" arg; do
         };;
     esac
 done
-shift $((OPTIND -1))
+unset arg;
 
-if [[ -z "$language" ]]; then
-    warn "No language provided. Defaulting to Any"
+if (( $_minify )) && [[ -z "$_inputFile" ]]; then
+    die "Input file missing"
 fi
-if (( ${#patterns[0]} == 0 )); then
-    warn "No patterns provided. Defaulting to all."
+
+if [[ -z "$_language" ]]; then
+    inform "No language provided. Defaulting to Any"
 fi
+
+patterns=( "${_patterns[@]}" )
+for pattern in "${pattterns[@]}"; do
+    for notPattern in "${_notPatterns[@]}"; do
+        [[ "$pattern" == "$notPattern" ]] && continue 2
+    done
+
+    _patterns+=($pattern)
+done
+unset pattern patterns notPattern
+
+php -f "index.php" -- "$function" "$_inputFile" "$_language" "${_patterns[@]}"
