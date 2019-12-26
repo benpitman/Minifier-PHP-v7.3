@@ -66,16 +66,70 @@ ____HELP
     exit 0
 }
 
+parsePatterns ()
+{
+    local -- pattern
+    local -- npIndex
+
+    local -a -- patterns=( "${_patterns[@]}" )
+    _inPlace=()
+
+    for pattern in "${pattterns[@]}"; do
+        for npIndex in ${!_notPatterns[@]}; do
+            if [[ "$pattern" == "${_notPatterns[$npIndex]}" ]]; then
+                unset _notPatterns[$npIndex]
+                continue 2
+            fi
+        done
+
+        _patterns+=($pattern)
+    done
+}
+
+setMinify ()
+{
+    (( _attributes |= $_minify ))
+}
+
+unsetMinify ()
+{
+    (( _attributes ^= $_minify ))
+}
+
+setAllPatterns ()
+{
+    (( _attributes |= $_allPatterns ))
+}
+
+unsetAllPatterns ()
+{
+    (( _attributes ^= $_allPatterns ))
+}
+
+setInPlace ()
+{
+    (( _attributes |= $_inPlace ))
+}
+
+unsetInPlace ()
+{
+    (( _attributes ^= $_inPlace ))
+}
+
 (( ${#@} )) || showHelp
 
-declare -g -- _language=
-declare -g -- _getPatternList=0
-declare -g -- _informs=1
-declare -g -- _warnings=1
+declare -gr -- _minify=1
+declare -gr -- _allPatterns=2
+declare -gr -- _inPlace=4
+
+declare -g -- _attributes=0
 declare -g -- _errors=1
+declare -g -- _informs=1
 declare -g -- _inputFile=
+declare -g -- _language=
 declare -g -- _outputFile=
-declare -g -- _minify=1
+declare -g -- _warnings=1
+
 declare -ag -- _patterns=()
 declare -ag -- _notPatterns=()
 
@@ -91,31 +145,31 @@ for arg in "$@"; do
     fi
 done
 
-while getopts ":a :h :i: :l: :n: :o: :p: :q :!" arg; do
+setMinify
+
+while getopts ":a :d :h :i: :l: :n: :o: :p: :q :r" arg; do
     case $arg in
         (a) {
-            _getPatternList=1
-            _minify=0
+            setAllPatterns
+        };;
+        (d) {
+            unsetMinify
         };;
         (h) {
             showHelp
         };;
         (i) {
-            if [[ ! -e "$OPTARG" ]]; then
-                die "$OPTARG is not a file"
-            elif [[ ! -r "$OPTARG" ]]; then
-                die "$OPTARG is not readable"
-            elif [[ ! -s "$OPTARG" ]]; then
-                die "$OPTARG is empty"
-            fi
+            [[ -e "$OPTARG" ]] || die "$OPTARG is not a file"
+            [[ -r "$OPTARG" ]] || die "$OPTARG is not readable"
+            [[ -s "$OPTARG" ]] || die "$OPTARG is empty"
 
             _inputFile="$OPTARG"
         };;
         (l) {
-            _language="$OPTARG"
+            _language="${OPTARG,,}"
         };;
         (n) {
-            _notPatterns+=("$OPTARG")
+            _notPatterns+=("${OPTARG,,}")
         };;
         (o) {
             [[ "$OPTARG" == "-" ]] && continue
@@ -125,22 +179,20 @@ while getopts ":a :h :i: :l: :n: :o: :p: :q :!" arg; do
 
                 createErrors=$( touch "$OPTARG" 2>&1 )
 
-                if [[ -n "$createErrors" ]]; then
-                    die "$createErrors"
-                fi
+                [[ -n "$createErrors" ]] || die "$createErrors"
 
                 inform "File '$OPTARG' created"
             fi
 
-
-            if [[ ! -w "$OPTARG" ]]; then
-                die "$OPTARG is not writeable"
-            fi
+            [[ -w "$OPTARG" ]] || die "$OPTARG is not writeable"
 
             _outputFile="$OPTARG"
         };;
         (p) {
-            _patterns+=("$OPTARG")
+            _patterns+=("${OPTARG,,}")
+        };;
+        (r) {
+            setInPlace
         };;
         (\?) {
             die "Invalid option -$OPTARG"
@@ -152,7 +204,7 @@ while getopts ":a :h :i: :l: :n: :o: :p: :q :!" arg; do
 done
 unset arg;
 
-if (( $_minify )) && [[ -z "$_inputFile" ]]; then
+if (( $_attributes & $_minify )) && [[ -z "$_inputFile" ]]; then
     die "Input file missing"
 fi
 
@@ -160,14 +212,11 @@ if [[ -z "$_language" ]]; then
     inform "No language provided. Defaulting to Any"
 fi
 
-patterns=( "${_patterns[@]}" )
-for pattern in "${pattterns[@]}"; do
-    for notPattern in "${_notPatterns[@]}"; do
-        [[ "$pattern" == "$notPattern" ]] && continue 2
-    done
+if (( $_inPlace )); then
+    [[ -z "$_inputFile" ]] && die "No input file provided"
+    _outputFile="$_inputFile"
+fi
 
-    _patterns+=($pattern)
-done
-unset pattern patterns notPattern
+parsePatterns
 
-php -f "index.php" -- "$function" "$_inputFile" "$_language" "${_patterns[@]}"
+php -f "index.php" -- "$_attributes" "$_inputFile" "$_language" "$_outputFile" "${_patterns[@]}"

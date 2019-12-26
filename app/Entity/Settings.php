@@ -7,59 +7,50 @@
     final class Settings
     {
         private $patternCollection;
+        private $inputFile;
+        private $language;
+        private $patterns = [];
 
-        public function __construct (?string $language = "Any")
+        public function __construct ()
         {
-            $this->language = $language;
             $this->pattternCollection = new PatternCollection();
         }
 
         /**
-         * Setters
-         */
+        * Getters
+        */
 
-        public function setArithmetic (bool $arithmetic = true): void
+        public function getInputFile (): string
         {
-            $this->arithmetic = $arithmetic;
+            return $this->inputFile;
         }
 
-        public function setBraces (bool $braces = true): void
+        public function getLanguage (): string
         {
-            $this->braces = $braces;
+            return $this->language;
         }
 
-        public function setCases (bool $cases = true): void
+        public function getPatterns (): array
         {
-            $this->cases = $cases;
+            return $this->patterns;
         }
 
-        public function setComments (bool $comments = true): void
+        /**
+        * Setters
+        */
+
+        public function setInputFile (string $filepath): void
         {
-            $this->comments = $comments;
+            $this->inputFile = $filepath;
         }
 
-        public function setFunctions (bool $functions = true): void
+        public function setLanguage (?string $language): void
         {
-            $this->functions = $functions;
+            $this->language = $language;
         }
 
-        public function setHeredocs (bool $heredocs = true): void
+        public function setPatterns (array $patterns): void
         {
-            $this->heredocs = $heredocs;
-        }
-
-        public function setOneliners (bool $oneliners = true): void
-        {
-            $this->oneliners = $oneliners;
-        }
-
-        public function setVariables (bool $variables = true): void
-        {
-            $this->variables = $variables;
-        }
-
-        public function setTrim (bool $trim = true): void
-        {
-            $this->trim = $trim;
+            $this->patterns = $patterns;
         }
     }
